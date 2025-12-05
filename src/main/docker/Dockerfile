@@ -62,7 +62,8 @@ RUN cp -a openttd-jgrpp-${PATCH_VERSION}-linux-generic-amd64/. openttd-jgrpp/
 RUN unzip opengfx-7.1-all.zip \
  && tar -xf opengfx-7.1.tar -C openttd-jgrpp/baseset/
 
-RUN rm -f *.tar *.zip openttd-jgrpp-${PATCH_VERSION}*
+# Clean up safely
+RUN rm -rf *.tar *.zip openttd-jgrpp-${PATCH_VERSION}*
 
 ###############################################################
 # Return to root to finish install
