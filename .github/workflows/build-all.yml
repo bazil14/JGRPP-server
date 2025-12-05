@@ -49,5 +49,8 @@ jobs:
           context: .
           file: src/main/docker/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            bazil14/jgrpp-server:latest
+            bazil14/jgrpp-server:${{ github.ref_name }}
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
