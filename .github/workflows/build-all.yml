@@ -27,7 +27,9 @@ jobs:
       # 3. Build with Maven
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
-
+       # 4a. Install curl and jq
+      - name: Install curl
+        run: sudo apt-get update && sudo apt-get install -y curl jq
       # 4. Determine latest JGRPP patch
       - name: Get latest JGRPP patch
         id: jgrpp
