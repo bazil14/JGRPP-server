@@ -2,5 +2,6 @@
 /* eslint-disable */
 export enum ServerFileType {
   SaveGame = 'SAVE_GAME',
-  Config = 'CONFIG'
+  Config = 'CONFIG',
+  newGRF = 'GRF'
 }
