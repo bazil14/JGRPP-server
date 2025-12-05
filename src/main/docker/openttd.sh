@@ -12,6 +12,14 @@ if [ ! -d "${PHOME}" ]; then
     chown ${PUID}:${PGID} "${PHOME}"
 fi
 
+OPENTTD_CONFIG_DIR="${PHOME}/.openttd"
+
+# Ensure config dir exists
+if [ ! -d "$OPENTTD_CONFIG_DIR" ]; then
+    mkdir -p "$OPENTTD_CONFIG_DIR"
+    chown -R "$USER:$USER" "$OPENTTD_CONFIG_DIR"
+fi
+
 echo "
 -----------------------------------
 GID/UID
