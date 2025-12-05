@@ -31,6 +31,7 @@ class OpenttdServiceTest {
     @BeforeEach
     void setup(){
         subject.openttdConfigDir=configDir.getAbsolutePath();
+        subject.serverConfigDir=configDir.getAbsolutePath();
     }
 
     @DisplayName("Test custom openttd.cfg without secrets.cfg and private.cfg, but custom password and name")
