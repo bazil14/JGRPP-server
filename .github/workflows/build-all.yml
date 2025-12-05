@@ -40,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: your-dockerhub-username/jgrpp-server
+          images: bazil14/jgrpp-server
 
       # 6. Build and push Docker image (single-platform)
       - name: Build and push Docker image
