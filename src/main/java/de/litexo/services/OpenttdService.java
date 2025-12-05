@@ -136,8 +136,8 @@ public class OpenttdService {
     protected void handleCustomConfig(OpenttdServer openttdServer, OpenttdProcess openttdProcess) {
         try {
             // choose a master/shared newgrf folder (change to your preferred path or inject via @ConfigProperty)
-            Path masterNewgrf = Paths.get(this.serverConfigDir).resolve("newgrf_library"); // <- set this to your master library
-
+            Path masterNewgrf = Paths.get(this.serverConfigDir).resolve("newgrf_library"); // Master NewGRF folder
+            Path masterGameScripts = Paths.get(this.serverConfigDir).resolve("GameScripts"); // Master GameScripts folder
             Path customConfigDir = Paths.get(this.openttdConfigDir).resolve(openttdServer.getId());
 
             if (Files.exists(customConfigDir)) {
@@ -154,10 +154,19 @@ public class OpenttdService {
             } catch (IOException e) {
                 throw new ServiceRuntimeException("Failed to ensure master NewGRF directory exists: " + masterNewgrf, e);
             }
+            try {
+                if (!Files.exists(masterGameScripts)) {
+                    // create the master directory so the symlink has a valid target
+                    Files.createDirectories(masterGameScripts);
+                }
+            } catch (IOException e) {
+                throw new ServiceRuntimeException("Failed to ensure master NewGRF directory exists: " + masterGameScripts, e);
+            }
 
             // --- create parent folder(s) for instance path: content_download/newgrf ---
             Path instanceContentDownload = customConfigDir.resolve("content_download");
             Path instanceNewgrf = instanceContentDownload.resolve("newgrf");
+            Path instanceGameScripts = instanceContentDownload.resolve("game");
 
             try {
                 // ensure the content_download parent exists
@@ -178,6 +187,29 @@ public class OpenttdService {
             } catch (IOException e) {
                 throw new ServiceRuntimeException("Failed to create symbolic link for NewGRF folder: " + instanceNewgrf + " -> " + masterNewgrf, e);
             }
+            
+            try {
+                // ensure the content_download parent exists
+                if (!Files.exists(instanceContentDownload)) {
+                    Files.createDirectories(instanceContentDownload);
+                }
+
+                // remove any leftover file/dir/symlink at instanceNewgrf
+                if (Files.exists(instanceGameScripts) || Files.isSymbolicLink(instanceGameScripts)) {
+                    Files.delete(instanceGameScripts);
+                }
+
+                // create symbolic link: <instance>/content_download/newgrf -> <masterNewgrf>
+                Files.createSymbolicLink(instanceGameScripts, masterGameScripts);
+
+            } catch (UnsupportedOperationException uoe) {
+                throw new ServiceRuntimeException("Symlinks not supported on this filesystem/platform", uoe);
+            } catch (IOException e) {
+                throw new ServiceRuntimeException("Failed to create symbolic link for NewGRF folder: " + instanceGameScripts + " -> " + masterGameScripts, e);
+            }
+
+
+
 
             Path configFile = customConfigDir.resolve("openttd.cfg");
             if (isDefined(openttdServer.getOpenttdConfig()) && Files.exists(Paths.get(openttdServer.getOpenttdConfig().getPath()))) {
