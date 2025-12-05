@@ -6,12 +6,9 @@ ARG OPENGFX_VERSION="7.1"
 ###############################################################
 # Install dependencies
 ###############################################################
-RUN apt-get update && apt-get install -y software-properties-common \
-    && add-apt-repository universe \
-    && apt-get update
 RUN apt-get update -y \
  && apt-get install -y wget unzip ca-certificates xz-utils dumb-init dos2unix \
-                       libfontconfig1 libfreetype6 libfluidsynth3 libicu-dev \
+                       libfontconfig1 libfreetype6 libfluidsynth2 libicu-dev \
                        libpng16-16 liblzma-dev liblzo2-2 libsdl2-2.0-0 \
                        libsdl1.2debian
 
