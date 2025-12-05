@@ -27,8 +27,8 @@ RUN dos2unix /tmp/cleanup.sh /tmp/buildconfig /openttd.sh \
 
 # User
 RUN adduser --uid 1000 --shell /bin/bash --gecos "" openttd \
- && addgroup openttd users \
- && passwd -d openttd
+    && addgroup openttd users \
+    && passwd -d openttd
 USER 1000
 WORKDIR /home/openttd
 
