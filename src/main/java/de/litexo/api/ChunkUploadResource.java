@@ -40,7 +40,7 @@ public class ChunkUploadResource {
     void init() throws IOException {
         this.configDir = initDir(this.openttdConfigDir);
         this.saveDir = initDir(this.openttdSaveDir);
-        this.NewgrfDir = initDir((this.serverConfigDir).resolve("newgrf_library").toString());
+        this.NewgrfDir = initDir(Paths.get(this.serverConfigDir).resolve("newgrf_library").toString());
     }
 
     private Path initDir(String path) throws IOException {
