@@ -44,12 +44,30 @@ fi
 
 if [ ! -d "$OPENGFX_DIR" ] || [ ! -f "$OPENGFX_DIR/readme.txt" ]; then
     echo "Downloading latest OpenGFX..."
-    OPENGFX_VERSION=$(curl -s https://cdn.openttd.org/opengfx-releases/ | grep -Po 'opengfx-\K[0-9]+\.[0-9]+' | sort -V | tail -1)
-    wget -q -O /tmp/opengfx.zip "https://cdn.openttd.org/opengfx-releases/${OPENGFX_VERSION}/opengfx-${OPENGFX_VERSION}-all.zip"
+
+    OPENGFX_VERSION=$(
+        curl -s https://cdn.openttd.org/opengfx-releases/ \
+        | grep -oP 'href="\K[0-9]+\.[0-9]+(?=/")' \
+        | sort -V \
+        | tail -1
+    )
+
+    echo "Latest OpenGFX version: $OPENGFX_VERSION"
+
+    # Download the correct working file: opengfx-VERSION-all.zip
+    wget -q -O /tmp/opengfx.zip \
+        "https://cdn.openttd.org/opengfx-releases/${OPENGFX_VERSION}/opengfx-${OPENGFX_VERSION}-all.zip"
+
+    # Extract
     unzip -qq /tmp/opengfx.zip -d /tmp/opengfx
+
+    # Inside the zip there is a .tar containing the base set
     tar -xf /tmp/opengfx/opengfx-${OPENGFX_VERSION}.tar -C "${OPENGFX_DIR}"
+
+    # Cleanup
     rm -rf /tmp/opengfx /tmp/opengfx.zip
 fi
+
 
 # Run OpenTTD as openttd user
 exec su -l ${USER} -c "${JGRPP_DIR}/openttd -D ${cmd}"
