@@ -46,10 +46,15 @@ RUN unzip opengfx-${OPENGFX_VERSION}-all.zip \
  && tar -xf opengfx-${OPENGFX_VERSION}.tar -C openttd-jgrpp/baseset/
 RUN rm -rf *.tar *.zip openttd-jgrpp-${PATCH_VERSION}*
 
+# Save default files for auto-populate
+RUN mkdir -p /tmp/default_openttd && cp -a /home/openttd/. /tmp/default_openttd
+
 # Root tasks
 USER root
 RUN /tmp/cleanup.sh
 RUN mkdir -p /home/openttd/server && chown -R 1000:1000 /home/openttd/server
+
+# Declare volume
 VOLUME /home/openttd
 
 # Quarkus management app
@@ -57,6 +62,10 @@ COPY --chown=1000 target/quarkus-app/lib/ /deployments/lib/
 COPY --chown=1000 target/quarkus-app/*.jar /deployments/
 COPY --chown=1000 target/quarkus-app/app/ /deployments/app/
 COPY --chown=1000 target/quarkus-app/quarkus/ /deployments/quarkus/
+
+# Startup wrapper
+COPY src/main/docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
 USER 1000
 ENV start-server.command="/openttd.sh"
@@ -67,4 +76,5 @@ ENV server.config.dir=/home/openttd/server
 EXPOSE 8080
 EXPOSE 3900-3999/tcp
 EXPOSE 3900-3999/udp
-CMD ["java", "-jar", "/deployments/quarkus-run.jar"]
+
+CMD ["/start.sh", "java", "-jar", "/deployments/quarkus-run.jar"]
