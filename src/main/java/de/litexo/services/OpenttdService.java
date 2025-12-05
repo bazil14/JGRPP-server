@@ -45,6 +45,10 @@ public class OpenttdService {
 
     @ConfigProperty(name = "openttd.config.dir")
     String openttdConfigDir;
+    @ConfigProperty(name = "server.config.dir")
+    String serverConfigDir;
+
+
 
 
     @Inject
@@ -132,7 +136,7 @@ public class OpenttdService {
     protected void handleCustomConfig(OpenttdServer openttdServer, OpenttdProcess openttdProcess) {
         try {
             // choose a master/shared newgrf folder (change to your preferred path or inject via @ConfigProperty)
-            Path masterNewgrf = Paths.get(this.openttdConfigDir).resolve("newgrf_library"); // <- set this to your master library
+            Path masterNewgrf = Paths.get(this.serverConfigDir).resolve("newgrf_library"); // <- set this to your master library
 
             Path customConfigDir = Paths.get(this.openttdConfigDir).resolve(openttdServer.getId());
 
