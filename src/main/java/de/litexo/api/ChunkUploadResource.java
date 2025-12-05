@@ -24,7 +24,9 @@ import java.nio.file.StandardOpenOption;
 public class ChunkUploadResource {
     @ConfigProperty(name = "openttd.save.dir")
     String openttdSaveDir;
-
+    @ConfigProperty(name = "server.config.dir")
+    String serverConfigDir;
+    
     @ConfigProperty(name = "openttd.config.dir")
     String openttdConfigDir;
 
@@ -32,10 +34,13 @@ public class ChunkUploadResource {
 
     Path saveDir;
 
+    Path NewgrfDir;
+
     @PostConstruct
     void init() throws IOException {
         this.configDir = initDir(this.openttdConfigDir);
         this.saveDir = initDir(this.openttdSaveDir);
+        this.NewgrfDir = initDir((this.serverConfigDir).resolve("newgrf_library").toString());
     }
 
     private Path initDir(String path) throws IOException {
@@ -76,6 +81,7 @@ public class ChunkUploadResource {
         switch (type) {
             case CONFIG -> upload = configDir.resolve(fileName);
             case SAVE_GAME -> upload = saveDir.resolve(fileName);
+            case GRF -> upload = NewgrfDir.resolve(fileName);
             default -> throw new ServiceRuntimeException("Unknown file type for upload");
 
         }
