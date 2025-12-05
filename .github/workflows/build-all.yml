@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,22 +28,27 @@ jobs:
       # 3. Build with Maven
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
-       # 4a. Install curl and jq
-      - name: Install curl
+
+      # 4a. Install curl and jq
+      - name: Install curl and jq
         run: sudo apt-get update && sudo apt-get install -y curl jq
-      # 4. Determine latest JGRPP patch
+
+      # 4b. Determine latest JGRPP patch
       - name: Get latest JGRPP patch
         id: jgrpp
         run: |
-          LATEST_JGRPP=$(curl -s https://api.github.com/repos/JGRennison/OpenTTD-patches/releases/latest | jq -r '.tag_name | ltrimstr("jgrpp-")')
+          LATEST_JGRPP=$(curl -s https://api.github.com/repos/JGRennison/OpenTTD-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//;s/^jgrpp-//')
           echo "LATEST_JGRPP=$LATEST_JGRPP" >> $GITHUB_ENV
+          echo "Latest JGRPP version: $LATEST_JGRPP"
 
       # 5. Determine latest OpenGFX version
       - name: Get latest OpenGFX version
         id: opengfx
         run: |
-          LATEST_OPENGFX=$(curl -s https://cdn.openttd.org/opengfx-releases/latest-linux.txt)
+          # Fetch directory listing and pick latest version number
+          LATEST_OPENGFX=$(curl -s https://cdn.openttd.org/opengfx-releases/ | grep -oP 'href="\K[0-9]+\.[0-9]+(?=/")' | sort -V | tail -n1)
           echo "LATEST_OPENGFX=$LATEST_OPENGFX" >> $GITHUB_ENV
+          echo "Latest OpenGFX version: $LATEST_OPENGFX"
 
       # 6. Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -57,6 +63,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: your-dockerhub-username/jgrpp-server
+          tags: |
+            latest
+            ${{ env.LATEST_JGRPP }}
 
       # 8. Build and push Docker image
       - name: Build and push Docker image
