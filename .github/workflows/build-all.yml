@@ -54,14 +54,28 @@ jobs:
           echo "Latest OpenGFX version: $LATEST_OPENGFX"
 
       # 7. Check if Docker image already exists
+      - name: Determine if run is manual
+        id: manual
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "MANUAL_RUN=true" >> $GITHUB_ENV
+          else
+            echo "MANUAL_RUN=false" >> $GITHUB_ENV
+          fi
+
       - name: Check Docker Hub for existing version
         id: check-image
         run: |
-          if curl -s -f -lSL "https://hub.docker.com/v2/repositories/bazil14/jgrpp-server/tags/${LATEST_JGRPP}" >/dev/null; then
-            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
-            echo "Image for JGRPP ${LATEST_JGRPP} already exists, skipping build."
+          if [ "${MANUAL_RUN}" != "true" ]; then
+            if curl -s -f -lSL "https://hub.docker.com/v2/repositories/bazil14/jgrpp-server/tags/${LATEST_JGRPP}" >/dev/null; then
+              echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
+              echo "Image for JGRPP ${LATEST_JGRPP} already exists, skipping build."
+            else
+              echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+            fi
           else
             echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+          fi
 
       # 8. Stop workflow if image exists
       - name: Stop if image exists
