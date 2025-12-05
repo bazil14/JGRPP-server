@@ -131,12 +131,49 @@ public class OpenttdService {
      */
     protected void handleCustomConfig(OpenttdServer openttdServer, OpenttdProcess openttdProcess) {
         try {
+            // choose a master/shared newgrf folder (change to your preferred path or inject via @ConfigProperty)
+            Path masterNewgrf = Paths.get(this.openttdConfigDir).resolve("newgrf_library"); // <- set this to your master library
+
             Path customConfigDir = Paths.get(this.openttdConfigDir).resolve(openttdServer.getId());
 
             if (Files.exists(customConfigDir)) {
                 FileUtils.deleteDirectory(customConfigDir.toFile());
             }
             Files.createDirectories(customConfigDir);
+
+            // --- ensure master exists (optionally create it) ---
+            try {
+                if (!Files.exists(masterNewgrf)) {
+                    // create the master directory so the symlink has a valid target
+                    Files.createDirectories(masterNewgrf);
+                }
+            } catch (IOException e) {
+                throw new ServiceRuntimeException("Failed to ensure master NewGRF directory exists: " + masterNewgrf, e);
+            }
+
+            // --- create parent folder(s) for instance path: content_download/newgrf ---
+            Path instanceContentDownload = customConfigDir.resolve("content_download");
+            Path instanceNewgrf = instanceContentDownload.resolve("newgrf");
+
+            try {
+                // ensure the content_download parent exists
+                if (!Files.exists(instanceContentDownload)) {
+                    Files.createDirectories(instanceContentDownload);
+                }
+
+                // remove any leftover file/dir/symlink at instanceNewgrf
+                if (Files.exists(instanceNewgrf) || Files.isSymbolicLink(instanceNewgrf)) {
+                    Files.delete(instanceNewgrf);
+                }
+
+                // create symbolic link: <instance>/content_download/newgrf -> <masterNewgrf>
+                Files.createSymbolicLink(instanceNewgrf, masterNewgrf);
+
+            } catch (UnsupportedOperationException uoe) {
+                throw new ServiceRuntimeException("Symlinks not supported on this filesystem/platform", uoe);
+            } catch (IOException e) {
+                throw new ServiceRuntimeException("Failed to create symbolic link for NewGRF folder: " + instanceNewgrf + " -> " + masterNewgrf, e);
+            }
 
             Path configFile = customConfigDir.resolve("openttd.cfg");
             if (isDefined(openttdServer.getOpenttdConfig()) && Files.exists(Paths.get(openttdServer.getOpenttdConfig().getPath()))) {
