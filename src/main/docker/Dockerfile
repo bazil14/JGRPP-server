@@ -1,21 +1,19 @@
 FROM ubuntu:20.04
 
-ARG PATCH_VERSION="0.53.0"
-ARG OPENGFX_VERSION="7.1"
+ARG PATCH_VERSION
+ARG OPENGFX_VERSION
 
 ###############################################################
 # Install dependencies
 ###############################################################
-RUN apt-get update
-RUN apt-get install dos2unix
-RUN apt-get install -y wget
-RUN apt-get install libgomp1
-RUN apt update -qq
-RUN apt install -yqq --no-install-recommends -o DPkg::Options::=--force-confold -o DPkg::Options::=--force-confdef dumb-init wget unzip ca-certificates libfontconfig1 libfreetype6 libfluidsynth2 libicu-dev libpng16-16 liblzma-dev liblzo2-2 libsdl1.2debian libsdl2-2.0-0 xz-utils > /dev/null 2>&1
-
+RUN apt-get update && apt-get install -y \
+    dos2unix wget libgomp1 unzip ca-certificates xz-utils dumb-init jq \
+    libfontconfig1 libfreetype6 libfluidsynth2 libicu-dev \
+    libpng16-16 liblzma-dev liblzo2-2 libsdl1.2debian libsdl2-2.0-0 \
+ && rm -rf /var/lib/apt/lists/*
 
 ###############################################################
-# Install Java 17 (kept from your original image)
+# Install Java 17
 ###############################################################
 ENV JVM_DIR=/usr/lib/jvm
 RUN mkdir -p "$JVM_DIR" /tmp/downloads
@@ -51,18 +49,32 @@ USER openttd
 WORKDIR /home/openttd
 
 ###############################################################
-# Install JGRPP instead of stock OpenTTD
+# Determine latest JGRPP patch if not specified
+###############################################################
+RUN if [ -z "$PATCH_VERSION" ]; then \
+      PATCH_VERSION=$(curl -s https://api.github.com/repos/JGRennison/OpenTTD-patches/releases/latest | jq -r '.tag_name | ltrimstr("jgrpp-")'); \
+    fi && echo "Using JGRPP patch version $PATCH_VERSION"
+
+###############################################################
+# Determine latest OpenGFX version if not specified
+###############################################################
+RUN if [ -z "$OPENGFX_VERSION" ]; then \
+      OPENGFX_VERSION=$(curl -s https://cdn.openttd.org/opengfx-releases/latest-linux.txt); \
+    fi && echo "Using OpenGFX version $OPENGFX_VERSION"
+
+###############################################################
+# Install JGRPP and OpenGFX
 ###############################################################
 RUN wget https://github.com/JGRennison/OpenTTD-patches/releases/download/jgrpp-${PATCH_VERSION}/openttd-jgrpp-${PATCH_VERSION}-linux-generic-amd64.tar.xz \
- && wget https://cdn.openttd.org/opengfx-releases/7.1/opengfx-7.1-all.zip
+ && wget https://cdn.openttd.org/opengfx-releases/${OPENGFX_VERSION}/opengfx-${OPENGFX_VERSION}-all.zip
 
 RUN tar -xf openttd-jgrpp-${PATCH_VERSION}-linux-generic-amd64.tar.xz
 
 RUN mkdir openttd-jgrpp
 RUN cp -a openttd-jgrpp-${PATCH_VERSION}-linux-generic-amd64/. openttd-jgrpp/
 
-RUN unzip opengfx-7.1-all.zip \
- && tar -xf opengfx-7.1.tar -C openttd-jgrpp/baseset/
+RUN unzip opengfx-${OPENGFX_VERSION}-all.zip \
+ && tar -xf opengfx-${OPENGFX_VERSION}.tar -C openttd-jgrpp/baseset/
 
 # Clean up safely
 RUN rm -rf *.tar *.zip openttd-jgrpp-${PATCH_VERSION}*
