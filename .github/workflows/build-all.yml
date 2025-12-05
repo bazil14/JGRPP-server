@@ -1,11 +1,12 @@
 name: Build JGRPP Server
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # Manual trigger
   workflow_dispatch:
+
+  # Schedule daily at 03:00 UTC to check for new releases
+  schedule:
+    - cron: "0 3 * * *"
 
 jobs:
   build:
@@ -18,7 +19,7 @@ jobs:
       # 1. Checkout repository
       - uses: actions/checkout@v2
 
-      # 2. Set up Java 17 (needed for Quarkus management UI)
+      # 2. Set up Java 17
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -29,45 +30,61 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
 
-      # 4a. Install curl and jq
+      # 4. Install curl and jq
       - name: Install curl and jq
         run: sudo apt-get update && sudo apt-get install -y curl jq
 
-      # 4b. Determine latest JGRPP patch
+      # 5. Get latest JGRPP patch version
       - name: Get latest JGRPP patch
         id: jgrpp
         run: |
-          LATEST_JGRPP=$(curl -s https://api.github.com/repos/JGRennison/OpenTTD-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//;s/^jgrpp-//')
+          LATEST_JGRPP=$(curl -s https://api.github.com/repos/JGRennison/OpenTTD-patches/releases/latest \
+            | jq -r '.tag_name' | sed 's/^v//;s/^jgrpp-//')
           echo "LATEST_JGRPP=$LATEST_JGRPP" >> $GITHUB_ENV
           echo "Latest JGRPP version: $LATEST_JGRPP"
 
-      # 5. Determine latest OpenGFX version
+      # 6. Get latest OpenGFX version
       - name: Get latest OpenGFX version
         id: opengfx
         run: |
-          # Fetch directory listing and pick latest version number
-          LATEST_OPENGFX=$(curl -s https://cdn.openttd.org/opengfx-releases/ | grep -oP 'href="\K[0-9]+\.[0-9]+(?=/")' | sort -V | tail -n1)
+          LATEST_OPENGFX=$(curl -s https://cdn.openttd.org/opengfx-releases/ \
+            | grep -oP 'href="\K[0-9]+\.[0-9]+(?=/")' | sort -V | tail -n1)
           echo "LATEST_OPENGFX=$LATEST_OPENGFX" >> $GITHUB_ENV
           echo "Latest OpenGFX version: $LATEST_OPENGFX"
 
-      # 6. Log in to Docker Hub
+      # 7. Check if Docker image already exists
+      - name: Check Docker Hub for existing version
+        id: check-image
+        run: |
+          if curl -s -f -lSL "https://hub.docker.com/v2/repositories/bazil14/jgrpp-server/tags/${LATEST_JGRPP}" >/dev/null; then
+            echo "IMAGE_EXISTS=true" >> $GITHUB_ENV
+            echo "Image for JGRPP ${LATEST_JGRPP} already exists, skipping build."
+          else
+            echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+
+      # 8. Stop workflow if image exists
+      - name: Stop if image exists
+        if: env.IMAGE_EXISTS == 'true'
+        run: exit 0
+
+      # 9. Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 7. Extract Docker metadata (tags, labels)
+      # 10. Extract Docker metadata (tags, labels)
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: your-dockerhub-username/jgrpp-server
+          images: bazil14/jgrpp-server
           tags: |
             latest
             ${{ env.LATEST_JGRPP }}
 
-      # 8. Build and push Docker image
+      # 11. Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
