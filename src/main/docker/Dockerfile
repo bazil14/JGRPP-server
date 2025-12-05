@@ -99,3 +99,5 @@ ENV openttd.config.dir=/home/openttd/server/config
 ENV server.config.dir=/home/openttd/server
 
 CMD ["java", "-jar", "/deployments/quarkus-run.jar"]
+
+EXPOSE 8080
