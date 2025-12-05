@@ -36,11 +36,14 @@ public class ChunkUploadResource {
 
     Path NewgrfDir;
 
+    Path GameScriptsDir;
+
     @PostConstruct
     void init() throws IOException {
         this.configDir = initDir(this.openttdConfigDir);
         this.saveDir = initDir(this.openttdSaveDir);
         this.NewgrfDir = initDir(Paths.get(this.serverConfigDir).resolve("newgrf_library").toString());
+        this.GameScriptsDir = initDir(Paths.get(this.serverConfigDir).resolve("GameScripts").toString());
     }
 
     private Path initDir(String path) throws IOException {
@@ -82,6 +85,7 @@ public class ChunkUploadResource {
             case CONFIG -> upload = configDir.resolve(fileName);
             case SAVE_GAME -> upload = saveDir.resolve(fileName);
             case GRF -> upload = NewgrfDir.resolve(fileName);
+            case SCRIPT -> upload = GameScriptsDir.resolve(fileName);
             default -> throw new ServiceRuntimeException("Unknown file type for upload");
 
         }

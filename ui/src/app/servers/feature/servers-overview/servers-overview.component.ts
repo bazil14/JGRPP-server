@@ -75,4 +75,14 @@ export class ServersOverviewComponent implements OnInit {
       console.log(`Dialog result: ${result}`);
     });
   }
+    uploadGameScripts() {
+    const dialogRef = this.dialog.open(FileUploadDialogComponent, {minWidth: "800px"});
+    dialogRef.componentInstance.dialogRef = dialogRef;
+    dialogRef.componentInstance.fileType = ServerFileType.GameScript;
+    dialogRef.componentInstance.dialogTitle = "UPLOAD OPENTTD Game Scripts";
+    dialogRef.componentInstance.subTitle = "Info: Don't upload files where the filename contains single/double quotes: ' or \" . This will cause problems!";
+    dialogRef.afterClosed().subscribe(result => {
+      console.log(`Dialog result: ${result}`);
+    });
+  }
 }

@@ -3,5 +3,6 @@
 export enum ServerFileType {
   SaveGame = 'SAVE_GAME',
   Config = 'CONFIG',
-  newGRF = 'GRF'
+  newGRF = 'GRF',
+  GameScript = 'SCRIPT'
 }
