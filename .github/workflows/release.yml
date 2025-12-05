@@ -1,0 +1,28 @@
+name: Create Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## Changes in ${GITHUB_REF_NAME}" > release.md
+          echo "" >> release.md
+          git log -20 --pretty=format:"- %s" >> release.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release.md
