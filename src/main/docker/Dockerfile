@@ -6,11 +6,13 @@ ARG OPENGFX_VERSION="7.1"
 ###############################################################
 # Install dependencies
 ###############################################################
-RUN apt-get update -y \
- && apt-get install -y wget unzip ca-certificates xz-utils dumb-init dos2unix \
-                       libfontconfig1 libfreetype6 libfluidsynth2 libicu-dev \
-                       libpng16-16 liblzma-dev liblzo2-2 libsdl2-2.0-0 \
-                       libsdl1.2debian
+RUN apt-get update
+RUN apt-get install dos2unix
+RUN apt-get install -y wget
+RUN apt-get install libgomp1
+RUN apt update -qq
+RUN apt install -yqq --no-install-recommends -o DPkg::Options::=--force-confold -o DPkg::Options::=--force-confdef dumb-init wget unzip ca-certificates libfontconfig1 libfreetype6 libfluidsynth2 libicu-dev libpng16-16 liblzma-dev liblzo2-2 libsdl1.2debian libsdl2-2.0-0 xz-utils > /dev/null 2>&1
+
 
 ###############################################################
 # Install Java 17 (kept from your original image)
