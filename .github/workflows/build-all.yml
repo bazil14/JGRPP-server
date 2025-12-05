@@ -1,61 +1,54 @@
-name: Build OpenTTD / JGRPP Docker Images
+name: Build JGRPP Server
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
 
     steps:
-      # 1. Checkout repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # 1. Checkout repository
+      - uses: actions/checkout@v2
 
-      # 2. Set up Java for Maven build
+      # 2. Set up Java 17 (needed for Quarkus management UI)
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. Build Quarkus project
-      - name: Build Quarkus project
-        run: mvn -B -DskipTests clean package
+      # 3. Build with Maven
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
 
-      # 4. Log in to GitHub Container Registry
+      # 4. Log in to GitHub Container Registry (or Docker Hub)
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Build & push Manager image
-      - name: Build and push Manager Docker image
-        uses: docker/build-push-action@v6
+      # 5. Extract metadata (tags, labels) for Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/bazil14/jgrpp-server
+
+      # 6. Build and push Docker image (single-platform)
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: src/main/docker/Dockerfile
-          platforms: linux/amd64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/jgrpp-server:latest
-            ghcr.io/${{ github.repository_owner }}/jgrpp-server:${{ github.ref_name }}
-
-      # 6. Build & push JGRPP Runtime image
-      - name: Build and push JGRPP Runtime Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: src/main/docker/Dockerfile.runtime
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/jgrpp-runtime:latest
-            ghcr.io/${{ github.repository_owner }}/jgrpp-runtime:${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
